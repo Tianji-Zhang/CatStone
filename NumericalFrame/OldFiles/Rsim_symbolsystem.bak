@@ -1,0 +1,6 @@
+#lang racket
+(define eqn1_symbol 
+  '(DIV x (* (/ kr_o mu_o) (DIV x p_o))))
+
+(define eqn1_symbol 
+  '(DIV x (* (/ kr_o mu_o) (DIV x p_o))))

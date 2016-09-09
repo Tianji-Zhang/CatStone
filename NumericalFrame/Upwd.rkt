@@ -1,0 +1,21 @@
+#lang racket
+
+(define (upwd-avg sym)
+  (lambda(F)
+    `(/ (+ (,sym (,F i)) (,sym i)) 2)))
+
+(define (upwd-1st-order sym-target sym-control)
+  (lambda(F)
+    `(if(> (,sym-control i) (,sym-control (,F i)))
+       (,sym-target i) 
+       (,sym-target (,F i)))))
+
+(define (upwd-2nd-order sym-target sym-control)
+  (lambda(F)
+    `(if(> (,sym-control i) (,sym-control (,F i)))
+       (+ (/ (,sym-target i) 1.5)
+          (/ ,sym-target (,F i) 3)) 
+       (+ (/ (,sym-target (,F i)) 1.5)
+          (/ ,sym-target (,F (,F i)) 3)))))
+
+(provide (all-defined-out))

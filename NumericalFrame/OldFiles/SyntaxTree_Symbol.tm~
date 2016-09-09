@@ -1,0 +1,60 @@
+<TeXmacs|1.99.2>
+
+<style|generic>
+
+<\body>
+  <doc-data|<doc-title|Syntax for the symbol calculator>>
+
+  <section|Basic Syntax Tree>
+
+  <tabular|<tformat|<table|<row|<cell|\<less\>func\<gtr\>>|<cell|:=>|<cell|(\<less\>op\<gtr\>
+  \<less\>func\<gtr\> \<less\>func\<gtr\>)>>|<row|<cell|>|<cell|\|>|<cell|(\<less\>div\<gtr\>
+  \ \<less\>unknowns\<gtr\>\|\<less\>time\<gtr\>\|\<less\>location\<gtr\>
+  \ \<less\>func\<gtr\>)>>|<row|<cell|>|<cell|\|>|<cell|\<less\>unknowns\<gtr\>\|\<less\>coefs\<gtr\>>>|<row|<cell|>|<cell|\|>|<cell|\<less\>consts\<gtr\>>>|<row|<cell|>|<cell|\|>|<cell|\<less\>location\<gtr\>\|\<less\>time\<gtr\>>>|<row|<cell|\<less\>coefs\<gtr\>>|<cell|:=>|<cell|(\<less\>op\<gtr\>
+  \<less\>coefs\<gtr\> \<less\>coefs\<gtr\>)>>|<row|<cell|>|<cell|\|>|<cell|\<less\>unknowns\<gtr\>>>|<row|<cell|>|<cell|\|>|<cell|\<less\>consts\<gtr\>>>|<row|<cell|>|<cell|\|>|<cell|\<less\>location\<gtr\>\|\<less\>time\<gtr\>>>|<row|<cell|\<less\>op\<gtr\>>|<cell|:=>|<math|+*>
+  \| <math|-> \| <math|\<times\>> \| <math|<text|>\<div\>> \| expt>>>>
+
+  Note: segmented-linear functions are not supported currently.
+
+  <section|The Implementation of Partial Derivation>
+
+  The terms in the expressions should have the index of their located cells
+  by default. Those indexes change after partial derivation, so we need
+  represent this change in our parser.
+
+  We consider the finite difference method
+
+  <\equation*>
+    <frac|\<partial\>F|\<partial\>x>=<frac|F<rsub|l<around*|(|i|)>->F<rsub|r<around*|(|i|)>>|\<Delta\>x<rsub|i>>
+  </equation*>
+
+  For second order,
+
+  <\equation*>
+    <frac|\<partial\><rsup|2>F|\<partial\>x<rsup|2>>=<frac|\<partial\>|\<partial\>x><around*|(|<frac|F<rsub|l<around*|(|i|)>->F<rsub|r<around*|(|i|)>>|\<Delta\>x<rsub|i>>|)>=<frac|F<rsub|l<around*|(|l<around*|(|i|)>|)>>-F<rsub|r<around*|(|l<around*|(|i|)>|)>>|\<Delta\>x<rsub|l<around*|(|i|)>>\<Delta\>x<rsub|i>>-<frac|F<rsub|l<around*|(|r<around*|(|i|)>|)>>-F<rsub|r<around*|(|r<around*|(|i|)>|)>>|\<Delta\>x<rsub|r<around*|(|i|)>>\<Delta\>x<rsub|i>>
+  </equation*>
+
+  We need to consider three conditions:\ 
+
+  1. Upwind scheme for cell-face change;
+
+  2. Cell change, which is shown in the second-order derivation above.
+
+  3. Boundary condition implementation for the above two situations.
+
+  \;
+
+  \;
+</body>
+
+<initial|<\collection>
+</collection>>
+
+<\references>
+  <\collection>
+    <associate|auto-1|<tuple|1|?>>
+    <associate|auto-2|<tuple|2|?>>
+    <associate|footnote-1|<tuple|1|?>>
+    <associate|footnr-1|<tuple|1|?>>
+  </collection>
+</references>

@@ -1,0 +1,116 @@
+#lang racket
+
+(require "Upwd.rkt")
+(require "DataStructure.rkt")
+(require "trans-matlab.rkt")
+
+; Dimension
+(define dim_map (dim_list 1))
+
+; IC
+(define var_n0
+  (list
+   `[p_o ,(data 100 5000)]
+   `[S_o ,(data 100 0.8)]))
+
+; Upwd: Default using avg scheme
+(define upwd-kr_o (upwd-1st-order `kr_o `p_o))
+(define upwd-kr_w (upwd-1st-order `kr_w `p_w))
+(define upwd-scheme
+  (list `[kr_o func ,upwd-kr_o]
+        `[kr_w func ,upwd-kr_w]))
+
+; Variables
+(define var_list
+  (list 
+   `[p_o  var                      1]
+   `[S_o  var                      2]
+   `[kr_o func          (expt S_o 2)] 
+   `[k    const                    1] 
+   `[mu_o const                    1] 
+   `[B_o  const                    1] 
+   `[kr_w func  (- 1 (expt S_o 0.5))] 
+   `[mu_w const                    1]
+   `[B_w  const                    1]
+   `[S_w  func             (- 1 S_o)]
+   `[phi  const                 0.35]
+   `[p_w  func    (+ p_o (* 50 S_w))]
+   `[V    const                    1]
+   `[A    const                    1]
+   `[x    location                 1]
+   `[dx   const                    1]
+   `[t    time                     1]
+   `[dt   const                    1]))
+
+
+; zones,flux, source, old term
+(define Jzone_2
+  (list `[W 0]))
+(define BC_eqn1_1 '(/ (- 100 (p_o i)) dx))
+(define BC_eqn2_1 '(/ (- 100 (p_w i)) dx))
+
+(define Jzone_3
+  (list `[E  99]))
+(define BC_eqn1_2 '(/ (- (p_o i) 0) dx))
+(define BC_eqn2_2 '(/ (- (p_w i) 0) dx))
+
+
+(define Jzone_1
+  (list `[W (1 . 99)]
+        `[E (0 . 98)]))
+(define Flux_eqn1
+  '(* 
+    (/ (* kr_o k) 
+       (* A 
+          (* mu_o B_o)))
+    (/ (DIFF p_o) dx)))
+(define Flux_eqn2
+  '(* 
+    (/ (* kr_w k) 
+       (* A 
+          (* mu_w B_w)))
+    (/ (DIFF p_w) dx)))
+
+(define Szone (cons 0 99))
+(define Source_eqn1
+  '(d/dt 
+    (/ (* (V i) (* S_o phi)) 
+       B_o)))
+(define Source_eqn2
+  '(d/dt 
+    (/ (* V (* S_w phi)) 
+       B_w)))
+
+
+(define J-generate (J_info var_list upwd-scheme upwd-avg var_n0))
+(define J_info1 (J-generate Jzone_1 (list Flux_eqn1 Flux_eqn2)))
+(define J_info2 (J-generate Jzone_2 (list BC_eqn1_1 BC_eqn2_1)))
+(define J_info3 (J-generate Jzone_3 (list BC_eqn1_2 BC_eqn2_2)))
+(define J_list (list J_info1 J_info2 J_info3))
+
+(define O-generate (O_info var_list var_n0))
+(define O_info0 (O-generate Szone (list Source_eqn1 Source_eqn2)))
+(define O_list (list O_info0))
+
+(define S-generate (S_info var_list var_n0))
+(define S_info0 (S-generate Szone (list Source_eqn1 Source_eqn2)))
+(define S_list (list S_info0))
+
+
+;Transform into matlab struct
+
+(define J (remove* (list 'quote) (flatten (matlab-conv dim_map J_list "J_info" var_list))))
+(define S (remove* (list 'quote) (flatten (matlab-conv dim_map S_list "S_info" var_list))))
+(define O (remove* (list 'quote) (flatten (matlab-conv dim_map O_list "O_info" var_list))))
+
+(define text-list (remove* (list 'quote) (flatten (list J S O))))
+((output-file "ex.txt") text-list)
+;((index->matlab dim_map "J_info" 1) (car J_info1))
+;((eqn->matlab "J_info" 1 var_list) (cadr J_info1))
+;((dRdv->matlab "J_info" 1 var_list) (caddr J_info1))
+;((dRdv->matlab "J_info" 1 var_list) (cadddr J_info1))
+
+
+;((index->matlab dim_map "S_info" 1) (car S_info0))
+;((eqn->matlab "S_info" 1 var_list) (cadr S_info0))
+;((dRdv->matlab "S_info" 1 var_list) (caddr S_info0))
