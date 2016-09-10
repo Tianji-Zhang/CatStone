@@ -1,6 +1,7 @@
 #lang racket
 
 (require "Dataops.rkt")
+(require "Upwd.rkt")
 
 ; First Pass: add index to each face regarding to upwd scheme
 (define (p-b-upwd var_list upwd_list upwd_default face_direction)

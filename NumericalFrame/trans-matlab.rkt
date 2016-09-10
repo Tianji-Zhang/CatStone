@@ -7,11 +7,11 @@
 ; Translate Scheme expression to matlab code
 ;For each equation, including derivative, source/sink and residual 
 (define (trans-matlab var_list)
-  (define adj_status #f)
   (define sym_list
     (list (cons 'var "var_array")
           (cons 'index "cell_index")
           (cons 'adj "adj_index")
+          (cons 'adjt "adj_table")
           (cons 'dim "dim")))
   (define (get-val x)
     (cdr (assq x sym_list)))
@@ -33,24 +33,24 @@
                                "," 
                                (get-val 'index) 
                                ")")
-               (begin 
-                 (set! adj_status #t);need to change the param head
-                 (string-append  (get-val 'var)
-                                 "(" 
-                                 (number->string var_i)
-                                 "," 
-                                 (get-val 'adj)
-                                 "("
-                                 (get-val 'index)
-                                 ","
-                                 (get-val 'dim)
-                                 ")"
-                                 ")"))))]
+               (string-append  (get-val 'var)
+                               "(" 
+                               (number->string var_i)
+                               "," 
+                               (get-val 'adj)
+                               "("
+                               (get-val 'index)
+                               ","
+                               (get-val 'dim)
+                               ","
+                               (get-val 'adjt)
+                               ")"
+                               ")")))]
         [`(if ,a ,e1 ,e2)
-         (string-append "logical" "(" (pass a) ")" 
+         (string-append "(logical" "(" (pass a) ")" 
                         ".*" (pass e1) 
-                        "+" "1-logical" "(" (pass a) ")" 
-                        ".*" (pass e2))]
+                        "+" "(1-logical" "(" (pass a) "))" 
+                        ".*" (pass e2) ")")]
         [`(,op ,e1 ,e2)
          (cond [(eq? op 'expt) 
                 (string-append "(" (pass e1) ".^" (pass e2) ")")]
@@ -62,9 +62,6 @@
   (define combine ; add function head
     (lambda(exp)
       (let ([fun_str (pass exp)])
-        (if adj_status
-            (begin
-              (set! adj_status #f)
               (string-append "@" 
                              "(" 
                              (get-val 'index)
@@ -72,13 +69,11 @@
                              (get-val 'var) 
                              ","
                              (get-val 'dim)
-                             ")" fun_str ";"))
-            (string-append "@" 
-                           "(" 
-                           (get-val 'index)
-                           "," 
-                           (get-val 'var) 
-                           ")" fun_str ";")))))
+                             ","
+                             (get-val 'adj)
+                             ","
+                             (get-val 'adjt)
+                             ")" fun_str ";"))))
   combine)
 
 
@@ -88,7 +83,7 @@
     (cdr (assq x dim_map)))
   (define proc-pair ;Ranged index
     (lambda(x)(string-append (number->string (+ 1 (car x))) 
-                   ":" (number->string (+ 1 (cdr x))) ";")))
+                             ":" (number->string (+ 1 (cdr x))) ";")))
   (define proc-vector
     (lambda(x)
       (string-append "["
@@ -99,14 +94,14 @@
       (string-append (number->string (+ 1 x)) ";")))
   (lambda(info)
     (let* ([field (car info)]
-          [val-list (cdr info)]
-          [head 
-           (string-append title 
-                          "(" (number->string n) "). "  field)]
-          [key (lambda(v) 
-                 (string-append "{" 
-                                (number->string v) "}="))]
-          [proc-str (lambda(v proc  val)(string-append head (key v) (proc val)))])
+           [val-list (cdr info)]
+           [head 
+            (string-append title 
+                           "(" (number->string n) "). "  field)]
+           [key (lambda(v) 
+                  (string-append "{" 
+                                 (number->string v) "}="))]
+           [proc-str (lambda(v proc  val)(string-append head (key v) (proc val)))])
       (cond
         [(list? val-list)
          (map 
@@ -136,14 +131,14 @@
         (list-series (- n 1) (list n c) )))
   (lambda(info)
     (let* ([field (car info)]
-          [eqn-list (cdr info)]
-          [head 
-           (string-append title 
-                          "(" (number->string n) "). "  field)]
-          [key (lambda(v) 
-                 (string-append "{" 
-                                (number->string v) "}="))]
-          [proc (lambda(x y)(string-append  head (key y) ((trans-matlab var_list) x)))])
+           [eqn-list (cdr info)]
+           [head 
+            (string-append title 
+                           "(" (number->string n) "). "  field)]
+           [key (lambda(v) 
+                  (string-append "{" 
+                                 (number->string v) "}="))]
+           [proc (lambda(x y)(string-append  head (key y) ((trans-matlab var_list) x)))])
       (map 
        proc
        eqn-list (list-series (length eqn-list) '())))))
@@ -151,15 +146,15 @@
 (define (dRdv->matlab title n var_list)
   (lambda(info)
     (let* ([field (car info)]
-          [eqn-list (cdr info)]
-          [head 
-           (string-append title 
-                          "(" (number->string n) "). "  field)]
-          [n_eqn (list-series (length eqn-list) '())]
-          [key2D (lambda(i1 i2) 
-                 (string-append "{" 
-                                (number->string i1) "," (number->string i2) "}="))]
-          [proc (lambda(x y)(string-append  head (key2D y) ((trans-matlab var_list) x)))])
+           [eqn-list (cdr info)]
+           [head 
+            (string-append title 
+                           "(" (number->string n) "). "  field)]
+           [n_eqn (list-series (length eqn-list) '())]
+           [key2D (lambda(i1 i2) 
+                    (string-append "{" 
+                                   (number->string i1) "," (number->string i2) "}="))]
+           [proc (lambda(x y)(string-append  head (key2D y) ((trans-matlab var_list) x)))])
       (map 
        (lambda(x i_var) 
          (map (lambda(x i_eqn)(string-append  head (key2D i_eqn i_var) ((trans-matlab var_list) x))) 
